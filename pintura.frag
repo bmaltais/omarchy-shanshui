@@ -26,11 +26,14 @@ layout(std140, binding = 0) uniform buf {
     float espalha;   // quanto o atraso maximo empurra um traco para tras
     float suave;     // largura, no mundo, da borda em que a tinta entra
     float grao;      // intensidade do grao do papel
+    float estilo;    // 0 cinza entre tinta e papel; 1 papeis de cor (retro)
     float fundo;     // 1 na camada de tras: ela poe o papel (e o grao) por baixo
     float bruma;     // 0..1: quanto o traco desbota em direcao ao papel
     float desloc;    // mundo da camada -> mundo da camera, para o grao ficar na tela
     vec4 papel;
     vec4 tinta;
+    vec4 cor2;       // so no retro: R, G e B do quadro sao quanto de tinta, cor2 e cor3
+    vec4 cor3;
 };
 
 layout(binding = 1) uniform sampler2D quadro;
@@ -55,6 +58,8 @@ void main() {
     // vezes o alfa: tinta * a + (papel - tinta) * r e a mistura pre-multiplicada.
     vec4 q = texture(quadro, qt_TexCoord0);
     vec3 c = tinta.rgb * q.a + (papel.rgb - tinta.rgb) * q.rgb;
+    if (estilo > 0.5)
+        c = papel.rgb * q.a + (tinta.rgb - papel.rgb) * q.r + (cor2.rgb - papel.rgb) * q.g + (cor3.rgb - papel.rgb) * q.b;
     c = mix(c, papel.rgb * q.a, bruma);
 
     // A frente e igual para a faixa toda, entao as faixas que ela ja deixou

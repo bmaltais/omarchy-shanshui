@@ -92,6 +92,12 @@ Clique no 山 da barra:
   Trocar de tema repinta na hora.
 
   ![Papel de arroz: tinta escura em papel creme, pintando da esquerda para a direita](papel.gif)
+- **Estilo**: Shan Shui (o rolo de tinta original) ou Retro 80s: sol listrado,
+  montanhas de arame, piso em grade, estrelas e palmeiras. O Retro pega as
+  cores do tema (acento nas linhas, urgente no sol, foreground nas estrelas e
+  palmeiras, background no céu), então paleta e inverter valem só para o Shan
+  Shui. Os dois estilos são pintados da esquerda para a direita e funcionam
+  com a profundidade e as otimizações abaixo.
 - **Otimização**:
   - **Resolução** (100%, 75%, 50%): tamanho das faixas em relação à tela. Menor
     é um pouco menos memória e tempo de desenho (cerca de 5% da memória do

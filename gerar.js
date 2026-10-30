@@ -7,6 +7,8 @@
 //       com --camada 0|1|2 (0 longe, 2 perto), ou varias ("0,1,2"), grava so
 //       essas camadas de profundidade, com fundo transparente, e planta o
 //       mundo uma vez so para todas; sem ela, tudo junto sobre papel
+//       com --estilo retro, o desenho dos anos 80 (retro.js) no lugar do
+//       Shan Shui; o quadro leva papeis de cor (R, G, B) em vez de cinza
 //   node gerar.js limpar --dir <cache> --manter q_...png,o_...png
 //       apaga as faixas que nao estao na lista
 //   node gerar.js preparar --dir <a> --dir <b>
@@ -300,8 +302,8 @@ function camadas(v) {
   return [...new Set(l)];
 }
 
-function nomes(seed, k, W, H, c) {
-  const base = `${seed}_${k}_${W}x${H}${c === undefined ? "" : "_c" + c}.png`;
+function nomes(seed, k, W, H, c, retro) {
+  const base = `${seed}_${k}_${W}x${H}${retro ? "_r" : ""}${c === undefined ? "" : "_c" + c}.png`;
   return { q: "q_" + base, o: "o_" + base };
 }
 
@@ -312,17 +314,20 @@ function cmdFaixa(a) {
   const H = inteiro(a.h, 64, 16384, "altura");
   const escala = Math.min(1, Math.max(0.1, Number(a["ordem-escala"] || 0.5)));
   const dfd = abrirPasta(String(a.dir || ""), true);
+  const estilo = a.estilo === undefined ? "shanshui" : String(a.estilo);
+  if (estilo !== "shanshui" && estilo !== "retro") falhar("estilo invalido: " + estilo);
+  const retro = estilo === "retro";
   // Faixa ja pintada antes (mesmo nome = mesma semente, k, camada e tamanho)
   // fica como esta; as outras saem de um mundo plantado uma vez so.
   const falta = camadas(a.camada).filter((c) => {
-    const n = nomes(seed, k, W, H, c);
+    const n = nomes(seed, k, W, H, c, retro);
     return !(existeValido(dfd, n.q) && existeValido(dfd, n.o));
   });
   if (falta.length) {
     const cursor = (k * VIEW_H * W) / H;
-    const d = desenhar(seed, cursor, W, H, { grain: false });
+    const d = (retro ? require("./retro.js").desenhar : desenhar)(seed, cursor, W, H, { grain: false });
     for (const c of falta) {
-      const n = nomes(seed, k, W, H, c);
+      const n = nomes(seed, k, W, H, c, retro);
       const q = rasterizar(d.quadro(c), W, H);
       const o = rasterizar(d.ordem(c), Math.round(W * escala), Math.round(H * escala));
       gravar(dfd, n.o, o);
@@ -331,12 +336,12 @@ function cmdFaixa(a) {
   }
   fs.closeSync(dfd);
   for (const c of camadas(a.camada)) {
-    const n = nomes(seed, k, W, H, c);
+    const n = nomes(seed, k, W, H, c, retro);
     process.stdout.write(n.q + " " + n.o + "\n");
   }
 }
 
-const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_c[0-2])?\.png$/;
+const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_r)?(_c[0-2])?\.png$/;
 
 function cmdLimpar(a) {
   const manter = new Set(String(a.manter || "").split(",").filter(Boolean));
@@ -361,6 +366,21 @@ function cmdPreparar(a) {
   for (const d of [].concat(a.dir || [])) fs.closeSync(abrirPasta(String(d), true));
 }
 
+function hex3(v, reserva) {
+  return hex(v, reserva);
+}
+
+function cmdRetro(a) {
+  const seed = semente(a.seed);
+  const W = inteiro(a.w || 1920, 64, 16384, "largura");
+  const H = inteiro(a.h || 1080, 64, 16384, "altura");
+  const d = require("./retro.js").desenhar(seed, Number(a.x || 0), W, H, {
+    paleta: { papel: hex3(a.papel, "1a1033"), acento: hex3(a.acento, "00e5ff"), urgente: hex3(a.urgente, "ff3d81"), texto: hex3(a.texto, "f5f0ff") },
+  });
+  const c = camadas(a.camada)[0];
+  process.stdout.write(a.ordem ? rasterizar(d.ordem(c), W, H) : rasterizar(d.quadro(c), W, H));
+}
+
 function cmdPng(a) {
   const seed = semente(a.seed);
   const W = inteiro(a.w || 1920, 64, 16384, "largura");
@@ -378,6 +398,7 @@ try {
   else if (comando === "preparar") cmdPreparar(a);
   else if (comando === "conferir") { if (!rsvg()) falhar("rsvg-convert nao encontrado (pacote librsvg)", 3); }
   else if (comando === "png") cmdPng(a);
+  else if (comando === "retro") cmdRetro(a);
   else falhar("uso: gerar.js faixa|limpar|preparar|conferir|png ...");
 } catch (e) {
   falhar(e && e.message ? e.message : String(e));

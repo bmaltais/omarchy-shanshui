@@ -162,6 +162,18 @@ Panel {
 
         PanelSeparator { width: parent.width; foreground: root.fg }
 
+        PanelSectionHeader { text: Paisagem.t("Estilo", "Style"); foreground: root.fg }
+        ButtonGroup {
+          foreground: root.fg
+          focusable: false
+          options: [
+            { value: "shanshui", label: "Shan Shui", tooltip: Paisagem.t("Tinta sobre papel, como o rolo original", "Ink on paper, like the original scroll") },
+            { value: "retro", label: "Retro 80s", tooltip: Paisagem.t("Sol listrado, montanhas de arame e grade, nas cores do tema", "Striped sun, wireframe mountains and grid, in your theme colors") }
+          ]
+          value: Paisagem.retro ? "retro" : "shanshui"
+          onChanged: function(v) { Paisagem.definir({ estilo: v }) }
+        }
+
         PanelSectionHeader { text: Paisagem.t("Velocidade · tempo por tela", "Speed · time per screen"); foreground: root.fg }
         ButtonGroup {
           foreground: root.fg
@@ -191,8 +203,9 @@ Panel {
           onChanged: function(v) { Paisagem.definir({ fps: Number(v) }) }
         }
 
-        PanelSectionHeader { text: Paisagem.t("Cores", "Colors"); foreground: root.fg }
+        PanelSectionHeader { visible: !Paisagem.retro; text: Paisagem.t("Cores", "Colors"); foreground: root.fg }
         ButtonGroup {
+          visible: !Paisagem.retro
           foreground: root.fg
           focusable: false
           options: root.paletas.map(function(p) { return { value: p.value, label: p.label } })
@@ -204,6 +217,7 @@ Panel {
         }
 
         Item {
+          visible: !Paisagem.retro
           width: parent.width
           implicitHeight: inverter.implicitHeight
 

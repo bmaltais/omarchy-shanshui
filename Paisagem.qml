@@ -65,6 +65,7 @@ Singleton {
     papel: "background",
     inverter: false,
     profundidade: false,  // camadas em velocidades diferentes (paralaxe)
+    estilo: "shanshui",   // "shanshui" (tinta) ou "retro" (anos 80, cores do tema)
     resolucao: 1,         // tamanho das faixas em relacao a tela (1, 0.75, 0.5)
     fpsAuto: true,        // fps so o que o movimento pede, no maximo o de cima
     idioma: "auto"        // "auto" (lingua do sistema), "pt" ou "en"
@@ -80,6 +81,8 @@ Singleton {
   // faixa nao recarrega quando outra muda): camada c usa os lugares 3c..3c+2.
   // Cada um: null ou { c, k, chave, quadro, ordem }.
   property var faixas: vazias()
+  readonly property bool retro: opcoes.estilo === "retro"
+  onRetroChanged: { faixas = vazias(); arrumar() }
   readonly property int camadas: opcoes.profundidade === true ? 3 : 1
   // Quanto a camada anda em relacao a camera (a de perto, a ultima, e 1), e
   // quanto ela desbota em direcao ao papel.
@@ -148,13 +151,20 @@ Singleton {
 
   // inverter troca tinta e papel, em qualquer paleta.
   readonly property bool invertido: opcoes.inverter === true
-  readonly property string tintaAtual: invertido ? cor(opcoes.papel, "background") : cor(opcoes.tinta, "foreground")
-  readonly property string papelAtual: invertido ? cor(opcoes.tinta, "foreground") : cor(opcoes.papel, "background")
+  // O retro usa os papeis do tema: acento (linhas), urgente (sol), foreground
+  // (estrelas, palmeiras) sobre o background; a paleta e o inverter so valem
+  // para o Shan Shui.
+  readonly property string tintaAtual: retro ? hex(Commons.Color.accent)
+    : invertido ? cor(opcoes.papel, "background") : cor(opcoes.tinta, "foreground")
+  readonly property string papelAtual: retro ? hex(Commons.Color.background)
+    : invertido ? cor(opcoes.tinta, "foreground") : cor(opcoes.papel, "background")
+  readonly property string cor2Atual: hex(Commons.Color.urgent)
+  readonly property string cor3Atual: hex(Commons.Color.foreground)
 
   // Tudo que muda o desenho de uma faixa; tambem e o nome do arquivo. As
   // cores nao entram: a faixa e cinza e o shader pinta com tinta e papel.
   function chave(c, k) {
-    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (camadas > 1 ? "_c" + c : "")
+    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (retro ? "_r" : "") + (camadas > 1 ? "_c" + c : "")
   }
 
   function faixa(c, k) {
@@ -225,7 +235,7 @@ Singleton {
       "--dir", cacheDir, "--seed", semente, "--k", String(k),
       "--w", String(faixaTam.width), "--h", String(faixaTam.height),
       "--ordem-escala", String(Math.min(1, 0.5 / escalaFaixa))],
-      camadas > 1 ? ["--camada", cs.join(",")] : [])
+      camadas > 1 ? ["--camada", cs.join(",")] : [], retro ? ["--estilo", "retro"] : [])
     pendentes = alvos.map(function(a) { return a.chave })
     gerando = true
     geradorProc.running = true

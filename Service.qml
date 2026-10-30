@@ -73,12 +73,15 @@ Item {
             property real largura: Paisagem.larguraVista
             property real espalha: Number(Paisagem.opcoes.espalha) || 140
             property real suave: Number(Paisagem.opcoes.suave) || 40
-            property real grao: Paisagem.opcoes.grao === undefined ? 0.06 : Number(Paisagem.opcoes.grao)
+            property real grao: Paisagem.retro ? 0 : Paisagem.opcoes.grao === undefined ? 0.06 : Number(Paisagem.opcoes.grao)
+            property real estilo: Paisagem.retro ? 1 : 0
             property real fundo: lugar.camada === 0 ? 1 : 0
             property real bruma: Paisagem.brumas[lugar.camada] === undefined ? 0 : Paisagem.brumas[lugar.camada]
             property real desloc: (1 - fator) * Paisagem.camera
             property color papel: Paisagem.papelAtual
             property color tinta: Paisagem.tintaAtual
+            property color cor2: Paisagem.cor2Atual
+            property color cor3: Paisagem.cor3Atual
             fragmentShader: Qt.resolvedUrl("pintura.frag.qsb")
           }
         }

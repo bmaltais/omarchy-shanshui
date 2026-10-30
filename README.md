@@ -95,6 +95,12 @@ Click 山 in the bar:
   Changing the theme repaints instantly.
 
   ![Rice paper: dark ink on cream paper, painting left to right](papel.gif)
+- **Style**: Shan Shui (the original ink scroll) or Retro 80s: a striped sun,
+  wireframe mountains, a perspective grid floor, stars and palms. Retro takes
+  its colors from the theme (accent for lines, urgent for the sun, foreground
+  for stars and palms, background for the sky), so the palette and invert
+  options apply to Shan Shui only. Both styles are painted left to right and
+  work with depth and the optimizations below.
 - **Optimization**:
   - **Resolution** (100%, 75%, 50%): size of the strips relative to the
     screen. Lower is a little less memory and drawing time (about 5% of the
