@@ -310,8 +310,8 @@ function margemRetro(H) {
   return { mpx, mundo: (mpx * VIEW_H) / H };
 }
 
-function nomes(seed, k, W, H, c, retro) {
-  const base = `${seed}_${k}_${W}x${H}${retro ? "_rm" : ""}${c === undefined ? "" : "_c" + c}.png`;
+function nomes(seed, k, W, H, c, estilo) {
+  const base = `${seed}_${k}_${W}x${H}${estilo === "retro" ? "_rm" : estilo === "aquarela" ? "_aq" : ""}${c === undefined ? "" : "_c" + c}.png`;
   return { q: "q_" + base, o: "o_" + base };
 }
 
@@ -323,21 +323,22 @@ function cmdFaixa(a) {
   const escala = Math.min(1, Math.max(0.1, Number(a["ordem-escala"] || 0.5)));
   const dfd = abrirPasta(String(a.dir || ""), true);
   const estilo = a.estilo === undefined ? "shanshui" : String(a.estilo);
-  if (estilo !== "shanshui" && estilo !== "retro") falhar("estilo invalido: " + estilo);
+  if (!["shanshui", "retro", "aquarela"].includes(estilo)) falhar("estilo invalido: " + estilo);
   const retro = estilo === "retro";
   // Faixa ja pintada antes (mesmo nome = mesma semente, k, camada e tamanho)
   // fica como esta; as outras saem de um mundo plantado uma vez so.
   const falta = camadas(a.camada).filter((c) => {
-    const n = nomes(seed, k, W, H, c, retro);
+    const n = nomes(seed, k, W, H, c, estilo);
     return !(existeValido(dfd, n.q) && existeValido(dfd, n.o));
   });
   if (falta.length) {
     const cursor = (k * VIEW_H * W) / H;
     const mg = retro ? margemRetro(H) : { mpx: 0, mundo: 0 };
-    const d = (retro ? require("./retro.js").desenhar : desenhar)(seed, cursor, W, H, { grain: false, margem: mg.mundo });
+    const gen = retro ? require("./retro.js").desenhar : estilo === "aquarela" ? require("./aquarela.js").desenhar : desenhar;
+    const d = gen(seed, cursor, W, H, { grain: false, margem: mg.mundo });
     const Wt = W + 2 * mg.mpx;
     for (const c of falta) {
-      const n = nomes(seed, k, W, H, c, retro);
+      const n = nomes(seed, k, W, H, c, estilo);
       const q = rasterizar(d.quadro(c), Wt, H);
       const o = rasterizar(d.ordem(c), Math.round(Wt * escala), Math.round(H * escala));
       gravar(dfd, n.o, o);
@@ -346,12 +347,12 @@ function cmdFaixa(a) {
   }
   fs.closeSync(dfd);
   for (const c of camadas(a.camada)) {
-    const n = nomes(seed, k, W, H, c, retro);
+    const n = nomes(seed, k, W, H, c, estilo);
     process.stdout.write(n.q + " " + n.o + "\n");
   }
 }
 
-const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_rm?)?(_c[0-2])?\.png$/;
+const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_rm?|_aq)?(_c[0-2])?\.png$/;
 
 function cmdLimpar(a) {
   const manter = new Set(String(a.manter || "").split(",").filter(Boolean));
@@ -391,6 +392,17 @@ function cmdRetro(a) {
   process.stdout.write(a.ordem ? rasterizar(d.ordem(c), W, H) : rasterizar(d.quadro(c), W, H));
 }
 
+function cmdAquarela(a) {
+  const seed = semente(a.seed);
+  const W = inteiro(a.w || 1920, 64, 16384, "largura");
+  const H = inteiro(a.h || 1080, 64, 16384, "altura");
+  const d = require("./aquarela.js").desenhar(seed, Number(a.x || 0), W, H, {
+    paleta: { papel: hex3(a.papel, "f3ead6"), cor1: hex3(a.cor1, "5a6fb0"), cor2: hex3(a.cor2, "c8553d"), cor3: hex3(a.cor3, "1d2a3a") },
+  });
+  const c = camadas(a.camada)[0];
+  process.stdout.write(a.ordem ? rasterizar(d.ordem(c), W, H) : rasterizar(d.quadro(c), W, H));
+}
+
 function cmdPng(a) {
   const seed = semente(a.seed);
   const W = inteiro(a.w || 1920, 64, 16384, "largura");
@@ -409,6 +421,7 @@ try {
   else if (comando === "conferir") { if (!rsvg()) falhar("rsvg-convert nao encontrado (pacote librsvg)", 3); }
   else if (comando === "png") cmdPng(a);
   else if (comando === "retro") cmdRetro(a);
+  else if (comando === "aquarela") cmdAquarela(a);
   else falhar("uso: gerar.js faixa|limpar|preparar|conferir|png ...");
 } catch (e) {
   falhar(e && e.message ? e.message : String(e));
