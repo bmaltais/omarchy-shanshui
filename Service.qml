@@ -75,6 +75,8 @@ Item {
             property real suave: Number(Paisagem.opcoes.suave) || 40
             property real grao: Paisagem.retro ? 0 : Paisagem.opcoes.grao === undefined ? 0.06 : Number(Paisagem.opcoes.grao)
             property real estilo: Paisagem.retro ? 1 : 0
+            property real anima: Paisagem.animando ? 1 : 0
+            property real tempo: Paisagem.tempo
             property real fundo: lugar.camada === 0 ? 1 : 0
             property real bruma: Paisagem.brumas[lugar.camada] === undefined ? 0 : Paisagem.brumas[lugar.camada]
             property real desloc: (1 - fator) * Paisagem.camera

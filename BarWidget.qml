@@ -174,6 +174,33 @@ Panel {
           onChanged: function(v) { Paisagem.definir({ estilo: v }) }
         }
 
+        Item {
+          visible: Paisagem.retro
+          enabled: Paisagem.camadas > 1
+          opacity: enabled ? 1 : 0.5
+          width: parent.width
+          implicitHeight: animar.implicitHeight
+
+          Text {
+            anchors.left: parent.left
+            anchors.right: animar.left
+            anchors.rightMargin: Style.space(8)
+            elide: Text.ElideRight
+            text: Paisagem.t("Animar palmeiras (pede profundidade)", "Animate palms (needs depth)")
+            color: root.fg
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+          }
+          ToggleSwitch {
+            id: animar
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            checked: Paisagem.opcoes.animar === true
+            foreground: root.fg
+            onToggled: Paisagem.definir({ animar: Paisagem.opcoes.animar !== true })
+          }
+        }
+
         PanelSectionHeader { text: Paisagem.t("Velocidade · tempo por tela", "Speed · time per screen"); foreground: root.fg }
         ButtonGroup {
           foreground: root.fg

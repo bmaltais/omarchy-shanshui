@@ -66,6 +66,7 @@ Singleton {
     inverter: false,
     profundidade: false,  // camadas em velocidades diferentes (paralaxe)
     estilo: "shanshui",   // "shanshui" (tinta) ou "retro" (anos 80, cores do tema)
+    animar: false,        // retro com profundidade: palmeiras balancam (pede ~10 fps)
     resolucao: 1,         // tamanho das faixas em relacao a tela (1, 0.75, 0.5)
     fpsAuto: true,        // fps so o que o movimento pede, no maximo o de cima
     idioma: "auto"        // "auto" (lingua do sistema), "pt" ou "en"
@@ -342,8 +343,14 @@ Singleton {
   readonly property real fpsEfetivo: {
     if (opcoes.fpsAuto === false || frente < corridaAte) return fpsMax
     var pxPorSeg = tela.width / (numero(opcoes.minPorTela, 0.1, 120, 5) * 60)
-    return Math.max(2, Math.min(fpsMax, pxPorSeg))
+    var f = Math.max(2, Math.min(fpsMax, pxPorSeg))
+    return animando ? Math.max(f, 10) : f
   }
+  // Movimento dos elementos: so no retro; segue o tique, entao pausa com ele.
+  // Pede a profundidade: sem ela a copa divide a faixa com as montanhas e o
+  // balanco as levaria junto.
+  readonly property bool animando: retro && camadas > 1 && opcoes.animar === true
+  property real tempo: 0
 
   property real ultimoTique: 0
   Timer {
@@ -356,6 +363,7 @@ Singleton {
       var agora = Date.now()
       var dt = Math.min(1, (agora - root.ultimoTique) / 1000)
       root.ultimoTique = agora
+      if (root.animando) root.tempo = (agora % 600000) / 1000
       // A frente so anda sobre papel que ja existe.
       if (!root.prontaFrente()) return
       var v = root.larguraVista / (root.numero(root.opcoes.minPorTela, 0.1, 120, 5) * 60)

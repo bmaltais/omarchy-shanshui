@@ -4,6 +4,11 @@
 // por camada), mas tudo aqui e funcao do x do mundo, sem estado: uma faixa
 // nao precisa das vizinhas e duas faixas lado a lado casam sem emenda.
 //
+// Movimento: o mapa de atraso tem o canal B livre; aqui ele diz como o pixel
+// se mexe (1..120: balanco da palmeira, cresce com a altura). A palmeira tem
+// uma zona de peso em volta da copa, acima do horizonte, onde so ela existe
+// na camada 2. So o shader usa, com o tempo como uniforme: nada e redesenhado.
+//
 // Cores: o quadro nao leva cor, leva PAPEIS. Em cada pixel, R, G e B dizem
 // quanto ali e da cor 1 (acento), da cor 2 (urgente) e da cor 3 (foreground)
 // do tema, e o shader mistura. Preto opaco e o papel (o fundo). Com
@@ -51,7 +56,8 @@ function desenhar(seed, cursor, W, H, opcoes) {
   const camadas = [[], [], []];
   function pôr(c, atraso, forma) { camadas[c].push({ atraso, forma }); }
 
-  const cru = (d) => { const v = Math.round(Math.min(0.999, Math.max(0, d)) * 65534) + 1; return `rgb(${v >> 8},${v & 255},0)`; };
+  const cruB = (d, b) => { const v = Math.round(Math.min(0.999, Math.max(0, d)) * 65534) + 1; return `rgb(${v >> 8},${v & 255},${b})`; };
+  const cru = (d) => cruB(d, 0);
 
   // ---- camada 0: estrelas e sol
   for (let i = Math.floor(x0 / 110); i < x1 / 110; i++) {
@@ -130,15 +136,23 @@ function desenhar(seed, cursor, W, H, opcoes) {
   for (let i = Math.floor((x0 - 120) / 520); i <= (x1 + 120) / 520; i++) {
     if (h(i, 12, 4) > 0.55) continue;
     const bx = i * 520 + h(i, 13, 4) * 400, by = HORIZONTE + 30 + h(i, 14, 4) * 150;
-    const alt = 120 + h(i, 15, 4) * 90, inc = (h(i, 16, 4) - 0.5) * 70;
+    // A copa fica sempre acima do horizonte (a zona de peso nao toca o piso).
+    const alt = Math.max(120 + h(i, 15, 4) * 90, by - HORIZONTE + 100), inc = (h(i, 16, 4) - 0.5) * 70;
     const tx = bx + inc, ty = by - alt;
     let folhas = "";
     for (let f = 0; f < 7; f++) {
       const a = 0.12 * Math.PI + (f / 6) * 0.76 * Math.PI, dx = Math.cos(a), up = Math.sin(a);
       folhas += `<path d="M${r2(tx)} ${r2(ty)} Q${r2(tx + dx * 70)} ${r2(ty - 12 - up * 38)} ${r2(tx + dx * 112)} ${r2(ty + 40 + (1 - up) * 55)}"/>`;
     }
+    const gid = "p" + (i < 0 ? "n" + -i : i);
     pôr(2, 0.95, (e) =>
-      `<g fill="none" stroke="${e.q ? cor(TEXTO) : e.o}" stroke-width="5" stroke-linecap="round">` +
+      (e.q ? "" : `<defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="0" y1="${HORIZONTE}" x2="0" y2="${r2(ty)}">` +
+        `<stop offset="0" stop-color="rgb(0,0,0)"/><stop offset="1" stop-color="rgb(0,0,120)"/></linearGradient>` +
+        // o traco leva o mesmo peso da zona, senao o pixel dele ficaria parado
+        `<linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="0" y1="${HORIZONTE}" x2="0" y2="${r2(ty)}">` +
+        `<stop offset="0" stop-color="${e.ob(0)}"/><stop offset="1" stop-color="${e.ob(120)}"/></linearGradient></defs>` +
+        `<rect x="${r2(tx - 130)}" y="${r2(ty - 70)}" width="260" height="${r2(HORIZONTE - ty + 68)}" fill="url(#${gid})" style="mix-blend-mode:lighten"/>`) +
+      `<g fill="none" stroke="${e.q ? cor(TEXTO) : `url(#${gid}s)`}" stroke-width="5" stroke-linecap="round">` +
       `<path d="M${r2(bx)} ${r2(by)} Q${r2(bx + inc * 0.2)} ${r2(by - alt * 0.5)} ${r2(tx)} ${r2(ty)}"/>` +
       `<g stroke-width="3.2">${folhas}</g></g>`);
   }
@@ -153,7 +167,7 @@ function desenhar(seed, cursor, W, H, opcoes) {
   return {
     quadro: (c) => envolver(dos(c).map((el) => el.forma({ q: true })).join(""),
       c === undefined ? cor(PAPEL) : "", ""),
-    ordem: (c) => envolver(dos(c).map((el) => el.forma({ o: cru(el.atraso) })).join(""), "rgb(0,0,0)",
+    ordem: (c) => envolver(dos(c).map((el) => el.forma({ o: cru(el.atraso), ob: (b) => cruB(el.atraso, b) })).join(""), "rgb(0,0,0)",
       'shape-rendering="crispEdges"'),
   };
 }

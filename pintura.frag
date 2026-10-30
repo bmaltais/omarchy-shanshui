@@ -26,6 +26,8 @@ layout(std140, binding = 0) uniform buf {
     float espalha;   // quanto o atraso maximo empurra um traco para tras
     float suave;     // largura, no mundo, da borda em que a tinta entra
     float grao;      // intensidade do grao do papel
+    float anima;     // 1: o canal B do mapa balanca as palmeiras (retro)
+    float tempo;     // segundos, so para o movimento
     float estilo;    // 0 cinza entre tinta e papel; 1 papeis de cor (retro)
     float fundo;     // 1 na camada de tras: ela poe o papel (e o grao) por baixo
     float bruma;     // 0..1: quanto o traco desbota em direcao ao papel
@@ -56,7 +58,15 @@ void main() {
     // entao trocar tema, paleta ou inverter nao regenera nada.
     // O quadro chega com alfa pre-multiplicado, entao o cinza (r) ja vem
     // vezes o alfa: tinta * a + (papel - tinta) * r e a mistura pre-multiplicada.
-    vec4 q = texture(quadro, qt_TexCoord0);
+    // Movimento: o B do mapa e o peso do balanco (ver retro.js); o pixel mostra
+    // o que estaria dx ao lado.
+    vec2 uv = qt_TexCoord0;
+    if (anima > 0.5) {
+        float w = texture(ordem, qt_TexCoord0).b * 255.0 / 120.0;
+        float dx = w * (sin(tempo * 1.4 + mundo.x * 0.012) + 0.4 * sin(tempo * 2.9 + mundo.x * 0.031)) * 9.0;
+        uv.x += dx / largura;
+    }
+    vec4 q = texture(quadro, uv);
     vec3 c = tinta.rgb * q.a + (papel.rgb - tinta.rgb) * q.rgb;
     if (estilo > 0.5)
         c = papel.rgb * q.a + (tinta.rgb - papel.rgb) * q.r + (cor2.rgb - papel.rgb) * q.g + (cor3.rgb - papel.rgb) * q.b;
@@ -66,11 +76,11 @@ void main() {
     // para tras (tudo pintado) ou ainda nao alcancou (nada pintado) pulam o
     // ruido e a leitura do mapa. A folga cobre a onda (+-75) e a borda.
     float a = 1.0;
-    if (frente < inicio + largura + espalha + suave + 120.0) {
-        vec4 o = texture(ordem, qt_TexCoord0);
+    if (anima > 0.5 || frente < inicio + largura + espalha + suave + 120.0) {
+        vec4 o = texture(ordem, uv);
         float cod = floor(o.r * 255.0 + 0.5) * 256.0 + floor(o.g * 255.0 + 0.5);
         if (cod > 0.0) {
-            if (frente <= inicio - 120.0) {
+            if (anima < 0.5 && frente <= inicio - 120.0) {
                 a = 0.0;
             } else {
                 float atraso = (cod - 1.0) / 65534.0;

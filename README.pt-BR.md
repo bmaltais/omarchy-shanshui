@@ -98,6 +98,10 @@ Clique no 山 da barra:
   palmeiras, background no céu), então paleta e inverter valem só para o Shan
   Shui. Os dois estilos são pintados da esquerda para a direita e funcionam
   com a profundidade e as otimizações abaixo.
+- **Animar palmeiras** (Retro com profundidade, desligado por padrão): as
+  palmeiras balançam, guiadas por um valor de tempo no shader, então nada é
+  redesenhado. Sobe a taxa para pelo menos 10 fps; medido +0,2% de um núcleo no
+  shell e no Hyprland sobre a fluidez automática a 5 min por tela.
 - **Otimização**:
   - **Resolução** (100%, 75%, 50%): tamanho das faixas em relação à tela. Menor
     é um pouco menos memória e tempo de desenho (cerca de 5% da memória do

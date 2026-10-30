@@ -101,6 +101,10 @@ Click 山 in the bar:
   for stars and palms, background for the sky), so the palette and invert
   options apply to Shan Shui only. Both styles are painted left to right and
   work with depth and the optimizations below.
+- **Animate palms** (Retro with depth on, off by default): the palms sway,
+  driven by a time value in the shader, so nothing is redrawn. It raises the
+  frame rate to at least 10 fps; measured +0.2% of a core in the shell and in
+  Hyprland over automatic motion at 5 min per screen.
 - **Optimization**:
   - **Resolution** (100%, 75%, 50%): size of the strips relative to the
     screen. Lower is a little less memory and drawing time (about 5% of the
