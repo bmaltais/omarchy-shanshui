@@ -25,6 +25,7 @@ layout(std140, binding = 0) uniform buf {
     float largura;   // largura da faixa, no mundo (a altura e 700)
     float espalha;   // quanto o atraso maximo empurra um traco para tras
     float suave;     // largura, no mundo, da borda em que a tinta entra
+    float onda;      // quanto o ruido deixa a frente irregular (1 pincel; ~0.2 reta)
     float grao;      // intensidade do grao do papel
     float margem;    // mundo: quanto a faixa leva de cada lado alem da largura (retro)
     float anima;     // 1: o canal B do mapa balanca as palmeiras (retro)
@@ -88,8 +89,8 @@ void main() {
                 a = 0.0;
             } else {
                 float atraso = (cod - 1.0) / 65534.0;
-                float onda = (ruido(mundo / 90.0) - 0.5) * 120.0 + (ruido(mundo / 23.0) - 0.5) * 30.0;
-                float quando = mundo.x + atraso * espalha + onda;
+                float irregular = ((ruido(mundo / 90.0) - 0.5) * 120.0 + (ruido(mundo / 23.0) - 0.5) * 30.0) * onda;
+                float quando = mundo.x + atraso * espalha + irregular;
                 a = smoothstep(quando, quando + suave, frente);
             }
         }

@@ -72,9 +72,11 @@ function desenhar(seed, cursor, W, H, opcoes) {
     const al = 0.4 + h(i, 5, 1) * 0.6;
     pôr(0, 0.02 + h(i, 6, 1) * 0.15, (e) => `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(e.q ? rr : rr + 1.5)}" ${e.q ? `fill="${cor(TEXTO, al)}"` : `fill="${e.o}"`}/>`);
   }
-  const CEL = 2600, SR = 135, SY = 245;
+  // Um sol a cada ~1400: a camada de longe anda a 30% da camera, e com o sol
+  // mais espacado que a vista (~1250) ele sumia por muitos minutos.
+  const CEL = 1400, SR = 135, SY = 245;
   for (let i = Math.floor((x0 - SR) / CEL); i <= (x1 + SR) / CEL; i++) {
-    const cx = i * CEL + 500 + h(i, 8, 2) * 1500;
+    const cx = i * CEL + CEL / 2 + (h(i, 8, 2) - 0.5) * 160;
     const id = "s" + (i < 0 ? "n" + -i : i);
     // Faixas: a metade de cima cheia, a de baixo em fatias cada vez mais finas.
     let faixas = `<rect x="${cx - SR}" y="${SY - SR}" width="${2 * SR}" height="${SR}"/>`;

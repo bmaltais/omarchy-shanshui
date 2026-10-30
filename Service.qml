@@ -71,8 +71,10 @@ Item {
             property real frente: Paisagem.frente - (1 - fator) * Paisagem.camera
             property real inicio: inicioMundo
             property real largura: Paisagem.larguraVista
-            property real espalha: Number(Paisagem.opcoes.espalha) || 140
-            property real suave: Number(Paisagem.opcoes.suave) || 40
+            // O retro e geometrico: uma frente quase reta, sem o pincel do Shan Shui.
+            property real espalha: Paisagem.retro ? 40 : Number(Paisagem.opcoes.espalha) || 140
+            property real suave: Paisagem.retro ? 24 : Number(Paisagem.opcoes.suave) || 40
+            property real onda: Paisagem.retro ? 0.2 : 1
             property real grao: Paisagem.retro ? 0 : Paisagem.opcoes.grao === undefined ? 0.06 : Number(Paisagem.opcoes.grao)
             property real estilo: Paisagem.retro ? 1 : 0
             property real margem: Paisagem.margemRetro
