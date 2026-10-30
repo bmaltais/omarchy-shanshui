@@ -70,11 +70,13 @@ function desenhar(seed, cursor, W, H, opcoes) {
       (w2 ? `<polygon points="${poli}" fill="${cor(w2, a2)}" transform="translate(0 -14)"/>` : "") +
       `<polyline points="${linha}" fill="none" stroke="${cor(w1, Math.min(1, a1 * 1.5))}" stroke-width="3" stroke-linejoin="round"/>`,
       "", false);
-    for (let a = Math.floor(x0 / 700); a * 700 < x1; a++) {
-      const seg = pts.filter((p) => p[0] >= a * 700 && p[0] <= a * 700 + 700);
-      if (seg.length < 3) continue;
+    // Fatias estreitas com atraso que varia devagar com o x: a serra cresce
+    // aos poucos, como lavagem, em vez de aparecer em pedacos soltos.
+    for (let a = Math.floor(x0 / 120); a * 120 < x1; a++) {
+      const seg = pts.filter((p) => p[0] >= a * 120 && p[0] <= a * 120 + 120);
+      if (seg.length < 2) continue;
       const lin = seg.map((p) => p.join(",")).join(" ");
-      mancha(c, h(a, sal, 21), "", `<polygon points="${seg[0][0]},${base + 40} ${lin} ${seg[seg.length - 1][0]},${base + 40}"/>`, true);
+      mancha(c, ruido(a * 120 / 600, sal + 40), "", `<polygon points="${seg[0][0]},${base + 40} ${lin} ${seg[seg.length - 1][0]},${base + 40}"/>`, true);
     }
     return pts;
   }
@@ -95,7 +97,7 @@ function desenhar(seed, cursor, W, H, opcoes) {
   const meio = serra(1, 0, 17, 1.15, 190, HORIZONTE + 30, COR1, 0.42, COR2, 0.1);
   for (let i = Math.floor((x0 - 100) / 900); i <= (x1 + 100) / 900; i++) {
     const cx = i * 900 + h(i, 11, 3) * 700;
-    mancha(1, h(i, 12, 3), `<ellipse cx="${r2(cx)}" cy="${HORIZONTE + 20}" rx="${r2(260 + h(i, 13, 3) * 200)}" ry="26" fill="${cor(PAPEL, 0.55)}"/>`);
+    mancha(1, h(i, 12, 3), `<ellipse cx="${r2(cx)}" cy="${HORIZONTE + 20}" rx="${r2(260 + h(i, 13, 3) * 200)}" ry="26" fill="${cor(COR3, 0.2)}"/>`);
   }
   for (let i = Math.floor(x0 / 70); i * 70 < x1; i++) {
     if (h(i, 14, 4) > 0.38) continue;

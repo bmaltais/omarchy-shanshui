@@ -169,7 +169,7 @@ Singleton {
   // Tudo que muda o desenho de uma faixa; tambem e o nome do arquivo. As
   // cores nao entram: a faixa e cinza e o shader pinta com tinta e papel.
   function chave(c, k) {
-    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (retro ? "_rm" : aquarela ? "_aq" : "") + (camadas > 1 ? "_c" + c : "")
+    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (retro ? "_rm" : aquarela ? "_am" : "") + (camadas > 1 ? "_c" + c : "")
   }
 
   function faixa(c, k) {
@@ -354,7 +354,7 @@ Singleton {
   // Pede a profundidade: sem ela a copa divide a faixa com as montanhas e o
   // balanco as levaria junto.
   // Margem das faixas do retro (mundo), a mesma conta do gerar.js.
-  readonly property real margemRetro: retro ? Math.ceil(16 * faixaTam.height / 700) * 700 / faixaTam.height : 0
+  readonly property real margemRetro: colorido ? Math.ceil((retro ? 16 : 48) * faixaTam.height / 700) * 700 / faixaTam.height : 0
   readonly property bool animando: retro && camadas > 1 && opcoes.animar === true
   property real tempo: 0
 

@@ -304,14 +304,14 @@ function camadas(v) {
 
 // Faixas do retro levam uma margem de ~16 unidades do mundo de cada lado (o
 // balanco le alem da borda): mpx pixels, e o mesmo em unidades do mundo.
-const MARGEM_MUNDO = 16;
-function margemRetro(H) {
-  const mpx = Math.ceil((MARGEM_MUNDO * H) / VIEW_H);
+const MARGEM_ESTILO = { retro: 16, aquarela: 48 }; // aquarela: o filtro de borda corta na emenda
+function margemRetro(H, estilo) {
+  const mpx = Math.ceil((MARGEM_ESTILO[estilo] * H) / VIEW_H);
   return { mpx, mundo: (mpx * VIEW_H) / H };
 }
 
 function nomes(seed, k, W, H, c, estilo) {
-  const base = `${seed}_${k}_${W}x${H}${estilo === "retro" ? "_rm" : estilo === "aquarela" ? "_aq" : ""}${c === undefined ? "" : "_c" + c}.png`;
+  const base = `${seed}_${k}_${W}x${H}${estilo === "retro" ? "_rm" : estilo === "aquarela" ? "_am" : ""}${c === undefined ? "" : "_c" + c}.png`;
   return { q: "q_" + base, o: "o_" + base };
 }
 
@@ -333,7 +333,7 @@ function cmdFaixa(a) {
   });
   if (falta.length) {
     const cursor = (k * VIEW_H * W) / H;
-    const mg = retro ? margemRetro(H) : { mpx: 0, mundo: 0 };
+    const mg = estilo === "shanshui" ? { mpx: 0, mundo: 0 } : margemRetro(H, estilo);
     const gen = retro ? require("./retro.js").desenhar : estilo === "aquarela" ? require("./aquarela.js").desenhar : desenhar;
     const d = gen(seed, cursor, W, H, { grain: false, margem: mg.mundo });
     const Wt = W + 2 * mg.mpx;
@@ -352,7 +352,7 @@ function cmdFaixa(a) {
   }
 }
 
-const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_rm?|_aq)?(_c[0-2])?\.png$/;
+const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_rm?|_am)?(_c[0-2])?\.png$/;
 
 function cmdLimpar(a) {
   const manter = new Set(String(a.manter || "").split(",").filter(Boolean));
