@@ -42,6 +42,11 @@ function desenhar(seed, cursor, W, H, opcoes) {
     return `rgba(${c},${r2(a)})`;
   }
 
+  // O atraso de tudo numa camada vem do mesmo campo liso em x. Cada pixel do
+  // mapa guarda um atraso so: se uma arvore tivesse atraso proprio, sua forma
+  // sobrescreveria o da serra por baixo e deixaria um buraco ate a vez dela.
+  const campo = (c, x) => ruido(x / 3200, 40 + 11 * c);
+
   const camadas = [[], [], []];
   function pôr(c, atraso, forma) { camadas[c].push({ atraso, forma }); }
   const cru = (d) => { const v = Math.round(Math.min(0.999, Math.max(0, d)) * 65534) + 1; return `rgb(${v >> 8},${v & 255},0)`; };
@@ -70,14 +75,21 @@ function desenhar(seed, cursor, W, H, opcoes) {
       (w2 ? `<polygon points="${poli}" fill="${cor(w2, a2)}" transform="translate(0 -14)"/>` : "") +
       `<polyline points="${linha}" fill="none" stroke="${cor(w1, Math.min(1, a1 * 1.5))}" stroke-width="3" stroke-linejoin="round"/>`,
       "", false);
-    // Fatias estreitas com atraso que varia devagar com o x: a serra cresce
-    // aos poucos, como lavagem, em vez de aparecer em pedacos soltos.
-    for (let a = Math.floor(x0 / 120); a * 120 < x1; a++) {
-      const seg = pts.filter((p) => p[0] >= a * 120 && p[0] <= a * 120 + 120);
-      if (seg.length < 2) continue;
-      const lin = seg.map((p) => p.join(",")).join(" ");
-      mancha(c, ruido(a * 120 / 600, sal + 40), "", `<polygon points="${seg[0][0]},${base + 40} ${lin} ${seg[seg.length - 1][0]},${base + 40}"/>`, true);
+    // A frente de pintura chega a x + atraso * espalha: se o atraso muda mais
+    // depressa que 1/espalha por unidade de x (periodo 3200 aqui, espalha ~620),
+    // essa conta deixa de crescer com x e a frente dobra, em borda vertical dura.
+    // No mapa o atraso da serra e um degrade continuo em x (um passo por
+    // fatia fazia degraus: onde dois atrasos diferem, a frente deixa uma
+    // borda vertical dura). As cores do degrade levam o atraso em R/G, e a
+    // interpolacao linear de R e G e linear no codigo de 16 bits.
+    const gid = `rg${c}_${sal}`;
+    let paradas = "";
+    for (let x = Math.floor(x0 / 100) * 100; x <= x1 + 100; x += 100) {
+      paradas += `<stop offset="${r2((x - Math.floor(x0 / 100) * 100) / (x1 + 100 - Math.floor(x0 / 100) * 100))}" stop-color="${cru(campo(c, x))}"/>`;
     }
+    pôr(c, 0, (e) => e.q ? "" :
+      `<defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${Math.floor(x0 / 100) * 100}" y1="0" x2="${x1 + 100}" y2="0">${paradas}</linearGradient></defs>` +
+      `<polygon points="${poli}" fill="url(#${gid})" stroke="url(#${gid})" stroke-width="26" stroke-linejoin="round"/>`);
     return pts;
   }
 
@@ -85,11 +97,11 @@ function desenhar(seed, cursor, W, H, opcoes) {
   for (let i = Math.floor((x0 - 500) / 1100); i <= (x1 + 500) / 1100; i++) {
     const cx = i * 1100 + h(i, 1, 1) * 500, cy = 120 + h(i, 2, 1) * 200;
     const rx = 260 + h(i, 3, 1) * 220, ry = 70 + h(i, 4, 1) * 70;
-    mancha(0, h(i, 5, 1), `<ellipse cx="${r2(cx)}" cy="${r2(cy)}" rx="${r2(rx)}" ry="${r2(ry)}" fill="${cor(h(i, 6, 1) > 0.5 ? COR1 : COR2, 0.16 + h(i, 7, 1) * 0.1)}"/>`);
+    mancha(0, campo(0, cx), `<ellipse cx="${r2(cx)}" cy="${r2(cy)}" rx="${r2(rx)}" ry="${r2(ry)}" fill="${cor(h(i, 6, 1) > 0.5 ? COR1 : COR2, 0.16 + h(i, 7, 1) * 0.1)}"/>`);
   }
   for (let i = Math.floor((x0 - 150) / 1500); i <= (x1 + 150) / 1500; i++) {
     const cx = i * 1500 + 750 + (h(i, 8, 2) - 0.5) * 200, cy = 250;
-    mancha(0, h(i, 9, 2), `<circle cx="${r2(cx)}" cy="${cy}" r="82" fill="${cor(COR2, 0.5)}"/>` + `<circle cx="${r2(cx)}" cy="${cy}" r="82" fill="none" stroke="${cor(COR2, 0.45)}" stroke-width="4"/>`);
+    mancha(0, campo(0, cx), `<circle cx="${r2(cx)}" cy="${cy}" r="82" fill="${cor(COR2, 0.5)}"/>` + `<circle cx="${r2(cx)}" cy="${cy}" r="82" fill="none" stroke="${cor(COR2, 0.45)}" stroke-width="4"/>`);
   }
   serra(0, 0, 5, 1.7, 110, HORIZONTE - 20, COR1, 0.2, null, 0);
 
@@ -97,14 +109,14 @@ function desenhar(seed, cursor, W, H, opcoes) {
   const meio = serra(1, 0, 17, 1.15, 190, HORIZONTE + 30, COR1, 0.42, COR2, 0.1);
   for (let i = Math.floor((x0 - 100) / 900); i <= (x1 + 100) / 900; i++) {
     const cx = i * 900 + h(i, 11, 3) * 700;
-    mancha(1, h(i, 12, 3), `<ellipse cx="${r2(cx)}" cy="${HORIZONTE + 20}" rx="${r2(260 + h(i, 13, 3) * 200)}" ry="26" fill="${cor(COR3, 0.2)}"/>`);
+    mancha(1, campo(1, cx), `<ellipse cx="${r2(cx)}" cy="${HORIZONTE + 20}" rx="${r2(260 + h(i, 13, 3) * 200)}" ry="26" fill="${cor(COR3, 0.2)}"/>`);
   }
   for (let i = Math.floor(x0 / 70); i * 70 < x1; i++) {
     if (h(i, 14, 4) > 0.38) continue;
     const x = i * 70 + h(i, 15, 4) * 60;
     const k = Math.min(meio.length - 1, Math.max(0, Math.round((x - Math.floor(x0 / 10) * 10) / 10)));
     const y = meio[k][1] + 6, al = 0.4 + h(i, 16, 4) * 0.3, t = 22 + h(i, 17, 4) * 24;
-    mancha(1, h(i, 18, 4), `<polygon points="${r2(x)},${r2(y - t)} ${r2(x - t * 0.32)},${r2(y)} ${r2(x + t * 0.32)},${r2(y)}" fill="${cor(COR3, al)}"/>`);
+    mancha(1, campo(1, x), `<polygon points="${r2(x)},${r2(y - t)} ${r2(x - t * 0.32)},${r2(y)} ${r2(x + t * 0.32)},${r2(y)}" fill="${cor(COR3, al)}"/>`);
   }
 
   // ---- camada 2: primeiro plano, pradaria escura e arvores
@@ -113,7 +125,7 @@ function desenhar(seed, cursor, W, H, opcoes) {
     if (h(i, 21, 5) > 0.6) continue;
     const bx = i * 600 + h(i, 22, 5) * 450, by = 560 + h(i, 23, 5) * 110;
     const alt = 150 + h(i, 24, 5) * 120, r = 55 + h(i, 25, 5) * 40;
-    mancha(2, h(i, 26, 5),
+    mancha(2, campo(2, bx),
       `<path d="M${r2(bx)} ${r2(by)} Q${r2(bx + 8)} ${r2(by - alt * 0.5)} ${r2(bx + 2)} ${r2(by - alt)}" fill="none" stroke="${cor(COR3, 0.8)}" stroke-width="7" stroke-linecap="round"/>` +
       `<ellipse cx="${r2(bx + 4)}" cy="${r2(by - alt - r * 0.4)}" rx="${r2(r * 1.2)}" ry="${r2(r)}" fill="${cor(COR1, 0.4)}"/>` +
       `<ellipse cx="${r2(bx - r * 0.3)}" cy="${r2(by - alt - r * 0.2)}" rx="${r2(r * 0.8)}" ry="${r2(r * 0.7)}" fill="${cor(COR2, 0.28)}"/>`,
