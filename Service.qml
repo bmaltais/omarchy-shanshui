@@ -74,8 +74,8 @@ Item {
             // O retro e geometrico: uma frente quase reta, sem o pincel do Shan Shui.
             // Aquarela: a frente larga (meia tela) faz cada mancha aparecer
             // numa coluna da tela, e a borda larga a deixa crescer como lavagem.
-            property real espalha: Paisagem.retro ? 40 : Paisagem.aquarela ? Paisagem.larguraVista * 0.5 : Number(Paisagem.opcoes.espalha) || 140
-            property real suave: Paisagem.retro ? 24 : Paisagem.aquarela ? 200 : Number(Paisagem.opcoes.suave) || 40
+            property real espalha: Paisagem.retro ? 40 : Paisagem.aquarela ? Paisagem.larguraVista * 0.15 : Number(Paisagem.opcoes.espalha) || 140
+            property real suave: Paisagem.retro ? 24 : Paisagem.aquarela ? 90 : Number(Paisagem.opcoes.suave) || 40
             property real onda: Paisagem.retro ? 0.2 : Paisagem.aquarela ? 0.4 : 1
             property real grao: Paisagem.colorido ? 0 : Paisagem.opcoes.grao === undefined ? 0.06 : Number(Paisagem.opcoes.grao)
             property real estilo: Paisagem.colorido ? 1 : 0
