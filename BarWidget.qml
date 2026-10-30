@@ -168,9 +168,10 @@ Panel {
           focusable: false
           options: [
             { value: "shanshui", label: "Shan Shui", tooltip: Paisagem.t("Tinta sobre papel, como o rolo original", "Ink on paper, like the original scroll") },
-            { value: "retro", label: "Retro 80s", tooltip: Paisagem.t("Sol listrado, montanhas de arame e grade, nas cores do tema", "Striped sun, wireframe mountains and grid, in your theme colors") }
+            { value: "retro", label: "Retro 80s", tooltip: Paisagem.t("Sol listrado, montanhas de arame e grade, nas cores do tema", "Striped sun, wireframe mountains and grid, in your theme colors") },
+            { value: "aquarela", label: Paisagem.t("Aquarela", "Watercolor"), tooltip: Paisagem.t("Lavagens translúcidas em camadas, nas cores do tema (protótipo)", "Translucent layered washes in your theme colors (prototype)") }
           ]
-          value: Paisagem.retro ? "retro" : "shanshui"
+          value: Paisagem.retro ? "retro" : Paisagem.aquarela ? "aquarela" : "shanshui"
           onChanged: function(v) { Paisagem.definir({ estilo: v }) }
         }
 
@@ -230,9 +231,9 @@ Panel {
           onChanged: function(v) { Paisagem.definir({ fps: Number(v) }) }
         }
 
-        PanelSectionHeader { visible: !Paisagem.retro; text: Paisagem.t("Cores", "Colors"); foreground: root.fg }
+        PanelSectionHeader { visible: !Paisagem.colorido; text: Paisagem.t("Cores", "Colors"); foreground: root.fg }
         ButtonGroup {
-          visible: !Paisagem.retro
+          visible: !Paisagem.colorido
           foreground: root.fg
           focusable: false
           options: root.paletas.map(function(p) { return { value: p.value, label: p.label } })
@@ -244,7 +245,7 @@ Panel {
         }
 
         Item {
-          visible: !Paisagem.retro
+          visible: !Paisagem.colorido
           width: parent.width
           implicitHeight: inverter.implicitHeight
 

@@ -65,7 +65,7 @@ Singleton {
     papel: "background",
     inverter: false,
     profundidade: false,  // camadas em velocidades diferentes (paralaxe)
-    estilo: "shanshui",   // "shanshui" (tinta) ou "retro" (anos 80, cores do tema)
+    estilo: "shanshui",   // "shanshui" (tinta), "retro" (anos 80) ou "aquarela"; os dois ultimos usam as cores do tema
     animar: false,        // retro com profundidade: palmeiras balancam (pede ~10 fps)
     resolucao: 1,         // tamanho das faixas em relacao a tela (1, 0.75, 0.5)
     fpsAuto: true,        // fps so o que o movimento pede, no maximo o de cima
@@ -83,7 +83,11 @@ Singleton {
   // Cada um: null ou { c, k, chave, quadro, ordem }.
   property var faixas: vazias()
   readonly property bool retro: opcoes.estilo === "retro"
+  readonly property bool aquarela: opcoes.estilo === "aquarela"
+  // Retro e aquarela: o quadro leva papeis de cor (acento, urgente, foreground).
+  readonly property bool colorido: retro || aquarela
   onRetroChanged: { faixas = vazias(); arrumar() }
+  onAquarelaChanged: { faixas = vazias(); arrumar() }
   readonly property int camadas: opcoes.profundidade === true ? 3 : 1
   // Quanto a camada anda em relacao a camera (a de perto, a ultima, e 1), e
   // quanto ela desbota em direcao ao papel.
@@ -155,9 +159,9 @@ Singleton {
   // O retro usa os papeis do tema: acento (linhas), urgente (sol), foreground
   // (estrelas, palmeiras) sobre o background; a paleta e o inverter so valem
   // para o Shan Shui.
-  readonly property string tintaAtual: retro ? hex(Commons.Color.accent)
+  readonly property string tintaAtual: colorido ? hex(Commons.Color.accent)
     : invertido ? cor(opcoes.papel, "background") : cor(opcoes.tinta, "foreground")
-  readonly property string papelAtual: retro ? hex(Commons.Color.background)
+  readonly property string papelAtual: colorido ? hex(Commons.Color.background)
     : invertido ? cor(opcoes.tinta, "foreground") : cor(opcoes.papel, "background")
   readonly property string cor2Atual: hex(Commons.Color.urgent)
   readonly property string cor3Atual: hex(Commons.Color.foreground)
@@ -165,7 +169,7 @@ Singleton {
   // Tudo que muda o desenho de uma faixa; tambem e o nome do arquivo. As
   // cores nao entram: a faixa e cinza e o shader pinta com tinta e papel.
   function chave(c, k) {
-    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (retro ? "_rm" : "") + (camadas > 1 ? "_c" + c : "")
+    return [semente, k, faixaTam.width + "x" + faixaTam.height].join("_") + (retro ? "_rm" : aquarela ? "_aq" : "") + (camadas > 1 ? "_c" + c : "")
   }
 
   function faixa(c, k) {
@@ -236,7 +240,7 @@ Singleton {
       "--dir", cacheDir, "--seed", semente, "--k", String(k),
       "--w", String(faixaTam.width), "--h", String(faixaTam.height),
       "--ordem-escala", String(Math.min(1, 0.5 / escalaFaixa))],
-      camadas > 1 ? ["--camada", cs.join(",")] : [], retro ? ["--estilo", "retro"] : [])
+      camadas > 1 ? ["--camada", cs.join(",")] : [], retro ? ["--estilo", "retro"] : aquarela ? ["--estilo", "aquarela"] : [])
     pendentes = alvos.map(function(a) { return a.chave })
     gerando = true
     geradorProc.running = true
