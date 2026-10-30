@@ -23,6 +23,9 @@ const HORIZONTE = 455;
 function desenhar(seed, cursor, W, H, opcoes) {
   const s = Number(BigInt(seed) % 2147483647n);
   const viewW = (VIEW_H * W) / H;
+  // Margem (unidades do mundo) que a faixa leva de cada lado: o balanco le o
+  // quadro um pouco alem da borda, e sem pixel ali o traco rasgaria na emenda.
+  const m = opcoes.margem || 0;
   const x0 = cursor - 400;
   const x1 = cursor + viewW + 400;
   const pal = opcoes.paleta || null;
@@ -51,7 +54,10 @@ function desenhar(seed, cursor, W, H, opcoes) {
     return `rgba(${c},${a})`;
   }
 
-  // Um elemento: o desenho (quadro) e o atraso dele (ordem), em [0, 1).
+  // Um elemento: o desenho (quadro) e o atraso dele (ordem), em [0, 1). No mapa
+// os tracos saem 3 unidades mais grossos: ele e rasterizado em meia resolucao,
+// sem antialias, e um traco de 1-2 px viraria pontos e tracinhos (que, com o
+// balanco, tremem).
   // forma(estilo) devolve o SVG com o estilo pedido.
   const camadas = [[], [], []];
   function pôr(c, atraso, forma) { camadas[c].push({ atraso, forma }); }
@@ -64,7 +70,7 @@ function desenhar(seed, cursor, W, H, opcoes) {
     if (h(i, 1, 1) > 0.4) continue;
     const x = i * 110 + h(i, 2, 1) * 110, y = h(i, 3, 1) * 330, rr = 0.8 + h(i, 4, 1) * 1.1;
     const al = 0.4 + h(i, 5, 1) * 0.6;
-    pôr(0, 0.02 + h(i, 6, 1) * 0.15, (e) => `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(rr)}" ${e.q ? `fill="${cor(TEXTO, al)}"` : `fill="${e.o}"`}/>`);
+    pôr(0, 0.02 + h(i, 6, 1) * 0.15, (e) => `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(e.q ? rr : rr + 1.5)}" ${e.q ? `fill="${cor(TEXTO, al)}"` : `fill="${e.o}"`}/>`);
   }
   const CEL = 2600, SR = 135, SY = 245;
   for (let i = Math.floor((x0 - SR) / CEL); i <= (x1 + SR) / CEL; i++) {
@@ -96,7 +102,7 @@ function desenhar(seed, cursor, W, H, opcoes) {
     pôr(c, atraso, (e) => e.q
       ? `<polygon points="${poli}" fill="${cor(PAPEL)}"/>` + (sombra ? sombra(pts, e) : "") +
         `<polyline points="${linha}" fill="none" stroke="${cor(ACENTO, fio)}" stroke-width="2.2" stroke-linejoin="round"/>`
-      : `<polygon points="${poli}" fill="${e.o}" stroke="${e.o}" stroke-width="2.2"/>`);
+      : `<polygon points="${poli}" fill="${e.o}" stroke="${e.o}" stroke-width="5.2"/>`);
   }
   // Fundo, mais baixa e fraca (camada 0), e a serra do meio.
   serra(0, 0.3, 11, 1.6, 95, 0.45, null);
@@ -126,12 +132,12 @@ function desenhar(seed, cursor, W, H, opcoes) {
   const N = 12;
   for (let i = 0; i <= N; i++) {
     const t = i / N, y = r2(HORIZONTE + (VIEW_H - HORIZONTE + 6) * t * t);
-    pôr(2, 0.6 + 0.2 * t, (e) => `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" ${e.q ? `stroke="${cor(ACENTO, 0.9)}"` : `stroke="${e.o}"`} stroke-width="${r2(1 + 2.2 * t)}"/>`);
+    pôr(2, 0.6 + 0.2 * t, (e) => `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" ${e.q ? `stroke="${cor(ACENTO, 0.9)}"` : `stroke="${e.o}"`} stroke-width="${r2(1 + 2.2 * t + (e.q ? 0 : 3))}"/>`);
   }
   const LARG = 100, INCL = 0.45, ALTO = VIEW_H - HORIZONTE + 6;
   for (let j = Math.floor((x0 - ALTO * INCL) / LARG); j <= x1 / LARG; j++) {
     const xa = j * LARG;
-    pôr(2, 0.65 + h(j, 9, 3) * 0.2, (e) => `<line x1="${xa}" y1="${HORIZONTE}" x2="${r2(xa + ALTO * INCL)}" y2="${HORIZONTE + ALTO}" ${e.q ? `stroke="${cor(ACENTO, 0.7)}"` : `stroke="${e.o}"`} stroke-width="1.6"/>`);
+    pôr(2, 0.65 + h(j, 9, 3) * 0.2, (e) => `<line x1="${xa}" y1="${HORIZONTE}" x2="${r2(xa + ALTO * INCL)}" y2="${HORIZONTE + ALTO}" ${e.q ? `stroke="${cor(ACENTO, 0.7)}"` : `stroke="${e.o}"`} stroke-width="${e.q ? 1.6 : 4.6}"/>`);
   }
   for (let i = Math.floor((x0 - 120) / 520); i <= (x1 + 120) / 520; i++) {
     if (h(i, 12, 4) > 0.55) continue;
@@ -152,15 +158,15 @@ function desenhar(seed, cursor, W, H, opcoes) {
         `<linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="0" y1="${HORIZONTE}" x2="0" y2="${r2(ty)}">` +
         `<stop offset="0" stop-color="${e.ob(0)}"/><stop offset="1" stop-color="${e.ob(120)}"/></linearGradient></defs>` +
         `<rect x="${r2(tx - 130)}" y="${r2(ty - 70)}" width="260" height="${r2(HORIZONTE - ty + 68)}" fill="url(#${gid})" style="mix-blend-mode:lighten"/>`) +
-      `<g fill="none" stroke="${e.q ? cor(TEXTO) : `url(#${gid}s)`}" stroke-width="5" stroke-linecap="round">` +
+      `<g fill="none" stroke="${e.q ? cor(TEXTO) : `url(#${gid}s)`}" stroke-width="${e.q ? 5 : 8}" stroke-linecap="round">` +
       `<path d="M${r2(bx)} ${r2(by)} Q${r2(bx + inc * 0.2)} ${r2(by - alt * 0.5)} ${r2(tx)} ${r2(ty)}"/>` +
-      `<g stroke-width="3.2">${folhas}</g></g>`);
+      `<g stroke-width="${e.q ? 3.2 : 6.2}">${folhas}</g></g>`);
   }
 
   function envolver(corpo, fundo, extra) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" ${extra || ""} ` +
-      `viewBox="${cursor} 0 ${viewW} ${VIEW_H}" preserveAspectRatio="xMidYMid slice">` +
-      (fundo ? `<rect x="${cursor - 10}" y="-10" width="${viewW + 20}" height="${VIEW_H + 20}" fill="${fundo}"/>` : "") +
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round((W * (viewW + 2 * m)) / viewW)}" height="${H}" ${extra || ""} ` +
+      `viewBox="${cursor - m} 0 ${viewW + 2 * m} ${VIEW_H}" preserveAspectRatio="xMidYMid slice">` +
+      (fundo ? `<rect x="${cursor - m - 10}" y="-10" width="${viewW + 2 * m + 20}" height="${VIEW_H + 20}" fill="${fundo}"/>` : "") +
       `<g>${corpo}</g></svg>`;
   }
   const dos = (c) => (c === undefined ? [0, 1, 2] : [c]).flatMap((k) => camadas[k]);

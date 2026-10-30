@@ -26,6 +26,7 @@ layout(std140, binding = 0) uniform buf {
     float espalha;   // quanto o atraso maximo empurra um traco para tras
     float suave;     // largura, no mundo, da borda em que a tinta entra
     float grao;      // intensidade do grao do papel
+    float margem;    // mundo: quanto a faixa leva de cada lado alem da largura (retro)
     float anima;     // 1: o canal B do mapa balanca as palmeiras (retro)
     float tempo;     // segundos, so para o movimento
     float estilo;    // 0 cinza entre tinta e papel; 1 papeis de cor (retro)
@@ -60,12 +61,15 @@ void main() {
     // vezes o alfa: tinta * a + (papel - tinta) * r e a mistura pre-multiplicada.
     // Movimento: o B do mapa e o peso do balanco (ver retro.js); o pixel mostra
     // o que estaria dx ao lado.
+    // As texturas do retro sao mais largas que a faixa, pela margem.
     vec2 uv = qt_TexCoord0;
+    float esc = largura / (largura + 2.0 * margem), off = margem / (largura + 2.0 * margem);
     if (anima > 0.5) {
-        float w = texture(ordem, qt_TexCoord0).b * 255.0 / 120.0;
+        float w = texture(ordem, vec2(uv.x * esc + off, uv.y)).b * 255.0 / 120.0;
         float dx = w * (sin(tempo * 1.4 + mundo.x * 0.012) + 0.4 * sin(tempo * 2.9 + mundo.x * 0.031)) * 9.0;
         uv.x += dx / largura;
     }
+    uv.x = uv.x * esc + off;
     vec4 q = texture(quadro, uv);
     vec3 c = tinta.rgb * q.a + (papel.rgb - tinta.rgb) * q.rgb;
     if (estilo > 0.5)

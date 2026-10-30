@@ -302,8 +302,16 @@ function camadas(v) {
   return [...new Set(l)];
 }
 
+// Faixas do retro levam uma margem de ~16 unidades do mundo de cada lado (o
+// balanco le alem da borda): mpx pixels, e o mesmo em unidades do mundo.
+const MARGEM_MUNDO = 16;
+function margemRetro(H) {
+  const mpx = Math.ceil((MARGEM_MUNDO * H) / VIEW_H);
+  return { mpx, mundo: (mpx * VIEW_H) / H };
+}
+
 function nomes(seed, k, W, H, c, retro) {
-  const base = `${seed}_${k}_${W}x${H}${retro ? "_r" : ""}${c === undefined ? "" : "_c" + c}.png`;
+  const base = `${seed}_${k}_${W}x${H}${retro ? "_rm" : ""}${c === undefined ? "" : "_c" + c}.png`;
   return { q: "q_" + base, o: "o_" + base };
 }
 
@@ -325,11 +333,13 @@ function cmdFaixa(a) {
   });
   if (falta.length) {
     const cursor = (k * VIEW_H * W) / H;
-    const d = (retro ? require("./retro.js").desenhar : desenhar)(seed, cursor, W, H, { grain: false });
+    const mg = retro ? margemRetro(H) : { mpx: 0, mundo: 0 };
+    const d = (retro ? require("./retro.js").desenhar : desenhar)(seed, cursor, W, H, { grain: false, margem: mg.mundo });
+    const Wt = W + 2 * mg.mpx;
     for (const c of falta) {
       const n = nomes(seed, k, W, H, c, retro);
-      const q = rasterizar(d.quadro(c), W, H);
-      const o = rasterizar(d.ordem(c), Math.round(W * escala), Math.round(H * escala));
+      const q = rasterizar(d.quadro(c), Wt, H);
+      const o = rasterizar(d.ordem(c), Math.round(Wt * escala), Math.round(H * escala));
       gravar(dfd, n.o, o);
       gravar(dfd, n.q, q);
     }
@@ -341,7 +351,7 @@ function cmdFaixa(a) {
   }
 }
 
-const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_r)?(_c[0-2])?\.png$/;
+const NOME_FAIXA = /^[qo]_[0-9]{1,20}_-?[0-9]{1,8}_[0-9]{2,5}x[0-9]{2,5}(_rm?)?(_c[0-2])?\.png$/;
 
 function cmdLimpar(a) {
   const manter = new Set(String(a.manter || "").split(",").filter(Boolean));
